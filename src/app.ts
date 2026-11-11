@@ -5,7 +5,7 @@ import { isStaff, readToken, type Principal } from './auth.ts';
 import type { Config, UpstreamName } from './config.ts';
 import { forward } from './proxy.ts';
 import { RateLimiter } from './ratelimit.ts';
-import { authFor, isRead, matchRoute } from './routes.ts';
+import { authFor, matchRoute } from './routes.ts';
 
 export type Logger = (line: Record<string, unknown>) => void;
 
@@ -94,7 +94,7 @@ export function createApp({ cfg, limiter = new RateLimiter(), log = () => {} }: 
         return void res.status(401).json({ error: 'unauthorized' });
       }
       const who: Principal | null = token.principal;
-      if (route.staffWrites && !isRead(req.method) && (!who || !isStaff(who))) return void res.status(403).json({ error: 'forbidden' });
+      if (route.staffOnly && (!who || !isStaff(who))) return void res.status(403).json({ error: 'forbidden' });
 
       const perMinute = cfg.rateLimits[route.limit];
       const client = route.limit === 'auth' || !who ? `ip:${req.ip}` : `user:${who.sub}`;

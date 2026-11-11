@@ -12,8 +12,8 @@ export interface Route {
   read: Auth;
   /** Policy for every other method. */
   write: Auth;
-  /** Non-read requests need the `staff` or `admin` role. */
-  staffWrites?: boolean;
+  /** Every request needs the `staff` or `admin` role. */
+  staffOnly?: boolean;
   limit: LimitClass;
   /** Adds the shared `x-internal-key` header for services that sit behind the gateway only. */
   internalKey?: boolean;
@@ -35,7 +35,8 @@ export const ROUTES: Route[] = [
   // The provider calls this without a token; the payments service checks the body signature itself.
   { prefix: '/payments/webhook', upstream: 'payments', read: 'none', write: 'none', limit: 'webhook' },
   { prefix: '/payments', upstream: 'payments', read: 'required', write: 'required', limit: 'default' },
-  { prefix: '/invoices', upstream: 'invoices', read: 'required', write: 'required', staffWrites: true, limit: 'default', internalKey: true },
+  // Internal API: it lists every customer's invoices, so the gateway only lets staff reach it.
+  { prefix: '/invoices', upstream: 'invoices', read: 'required', write: 'required', staffOnly: true, limit: 'default', internalKey: true },
 ];
 
 const bySpecificity = [...ROUTES].sort((a, b) => b.prefix.length - a.prefix.length);

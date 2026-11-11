@@ -23,7 +23,7 @@ test('every public prefix reaches its upstream with the path and query unchanged
     ['GET', '/invoices', 'invoices'],
   ];
   for (const [method, path, upstream] of table) {
-    const r = await get(path, bearer(), method);
+    const r = await get(path, bearer({ role: 'staff' }), method);
     assert.equal(r.status, 200, path);
     const got = seen(r);
     assert.equal(got.upstream, upstream, path);

@@ -58,14 +58,16 @@ test('cart accepts guests, but a token that is sent must be valid', async () => 
   assert.equal((await call('/cart', bearer())).status, 200);
 });
 
-test('invoices: any signed-in user reads, only staff or admin write, and the internal key is added', async () => {
+test('invoices are staff-only for every method, and the internal key is added for staff', async () => {
   assert.equal((await call('/invoices')).status, 401);
-  const read = await call('/invoices', bearer());
-  assert.equal(read.status, 200);
-  assert.equal(seen(read).headers['x-internal-key'], 'internal-secret');
-  assert.equal((await call('/invoices/credit-notes', bearer(), 'POST', '{}')).status, 403);
-  assert.equal((await call('/invoices/credit-notes', bearer({ role: 'staff' }), 'POST', '{}')).status, 200);
-  assert.equal((await call('/invoices/credit-notes', bearer({ role: 'admin' }), 'POST', '{}')).status, 200);
+  for (const [path, method] of [['/invoices', 'GET'], ['/invoices/order/o-1', 'GET'], ['/invoices/i-1/pdf', 'GET'], ['/invoices/i-1/credit-notes', 'POST']]) {
+    assert.equal((await call(path, bearer(), method, method === 'POST' ? '{}' : undefined)).status, 403, `customer ${method} ${path}`);
+    for (const role of ['staff', 'admin']) {
+      const r = await call(path, bearer({ role }), method, method === 'POST' ? '{}' : undefined);
+      assert.equal(r.status, 200, `${role} ${method} ${path}`);
+      assert.equal(seen(r).headers['x-internal-key'], 'internal-secret');
+    }
+  }
 });
 
 test('the internal key is only sent to invoices and a client-supplied one is never forwarded', async () => {
@@ -73,7 +75,7 @@ test('the internal key is only sent to invoices and a client-supplied one is nev
     const got = seen(await call(path, { ...bearer(), 'x-internal-key': 'guessed' }, path === '/payments/webhook' ? 'POST' : 'GET', path === '/payments/webhook' ? '{}' : undefined));
     assert.equal(got.headers['x-internal-key'], undefined, path);
   }
-  assert.equal(seen(await call('/invoices', { ...bearer(), 'x-internal-key': 'guessed' })).headers['x-internal-key'], 'internal-secret');
+  assert.equal(seen(await call('/invoices', { ...bearer({ role: 'staff' }), 'x-internal-key': 'guessed' })).headers['x-internal-key'], 'internal-secret');
 });
 
 test('x-tenant comes from the token, never from the client', async () => {

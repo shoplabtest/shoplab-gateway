@@ -11,7 +11,7 @@ The one public API surface. Node, Express, TypeScript, no database. It replaces 
 | `/orders` | orders (`ORDERS_URL`) | token | token |
 | `/payments/webhook` | payments (`PAYMENTS_URL`) | public | public (the provider signs the body) |
 | `/payments` | payments | token | token |
-| `/invoices` | invoices (`INVOICES_URL`) | token | staff or admin token |
+| `/invoices` | invoices (`INVOICES_URL`) | staff or admin token | staff or admin token |
 
 The table lives in [src/routes.ts](src/routes.ts); the longest matching prefix wins and anything not listed is `404`. Paths and query strings are forwarded unchanged.
 
